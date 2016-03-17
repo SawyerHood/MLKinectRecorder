@@ -17,6 +17,8 @@ namespace Microsoft.Samples.Kinect.BodyBasics
     using System.Windows.Media.Imaging;
     using Microsoft.Kinect;
     using System.Text;
+    using System.Linq;
+    using System.Threading;
 
     /// <summary>
     /// Interaction logic for MainWindow
@@ -24,6 +26,7 @@ namespace Microsoft.Samples.Kinect.BodyBasics
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
         public const string CLASSIFICATION = "1.0;";
+        public const string OUT_FILE = @"C:\Users\Sawyer Hood\Desktop\out.csv";
         /// <summary>
         /// Radius of drawn hand circles
         /// </summary>
@@ -220,9 +223,17 @@ namespace Microsoft.Samples.Kinect.BodyBasics
             this.InitializeComponent();
 
             System.Threading.Timer timer = null;
+            ThreadStart ts = delegate ()
+            {
+                Dispatcher.BeginInvoke((Action)delegate ()
+                {
+                    Application.Current.Shutdown();
+                });
+            };
+            Thread t = new Thread(ts);
             timer = new System.Threading.Timer((obj) =>
             {
-                this.Close();
+                t.Start();
                 timer.Dispose();
             },
                         null, 12000, System.Threading.Timeout.Infinite);
@@ -303,6 +314,22 @@ namespace Microsoft.Samples.Kinect.BodyBasics
             }
         }
 
+        private void WriteJointOrientations(Body body) {
+            StringBuilder jointsString = new StringBuilder(CLASSIFICATION);
+            var jointOrientations = body.JointOrientations;
+            foreach (JointType joint in jointOrientations.Keys.OrderBy(s => s)) {
+                var orient = jointOrientations[joint].Orientation;
+                jointsString.AppendFormat("{0};{1};{2};{3};", orient.X, orient.Y, orient.Z, orient.W);
+            }
+            
+            jointsString.Remove(jointsString.Length - 1, 1);
+            using (System.IO.StreamWriter file =
+                                    new System.IO.StreamWriter(OUT_FILE, true))
+            {
+                file.WriteLine(jointsString.ToString());
+            }
+        }
+
         /// <summary>
         /// Handles the body frame data arriving from the sensor
         /// </summary>
@@ -343,13 +370,14 @@ namespace Microsoft.Samples.Kinect.BodyBasics
 
                         if (body.IsTracked)
                         {
+                            WriteJointOrientations(body);
                             this.DrawClippedEdges(body, dc);
 
                             IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
 
                             // convert the joint points to depth (display) space
                             Dictionary<JointType, Point> jointPoints = new Dictionary<JointType, Point>();
-                            StringBuilder jointsString = new StringBuilder(CLASSIFICATION);
+                            
                             foreach (JointType jointType in joints.Keys)
                             {
                                 
@@ -360,17 +388,10 @@ namespace Microsoft.Samples.Kinect.BodyBasics
                                 {
                                     position.Z = InferredZPositionClamp;
                                 }
-                                jointsString.AppendFormat("{0};{1};{2};", position.X, position.Y, position.Z);
+                                
                                 
                                 DepthSpacePoint depthSpacePoint = this.coordinateMapper.MapCameraPointToDepthSpace(position);
                                 jointPoints[jointType] = new Point(depthSpacePoint.X, depthSpacePoint.Y);
-                            }
-                            jointsString.Remove(jointsString.Length - 1, 1);
-
-                            using (System.IO.StreamWriter file =
-                                    new System.IO.StreamWriter(@"C:\Users\Sawyer Hood\Desktop\out.csv", true))
-                            {
-                                file.WriteLine(jointsString.ToString());
                             }
 
                             this.DrawBody(joints, jointPoints, dc, drawPen);

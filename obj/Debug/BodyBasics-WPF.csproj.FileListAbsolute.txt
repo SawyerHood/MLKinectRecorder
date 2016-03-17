@@ -3,7 +3,6 @@ C:\Users\Sawyer Hood\Desktop\BodyBasics-WPF\bin\AnyCPU\Debug\BodyBasics-WPF.exe
 C:\Users\Sawyer Hood\Desktop\BodyBasics-WPF\bin\AnyCPU\Debug\BodyBasics-WPF.pdb
 C:\Users\Sawyer Hood\Desktop\BodyBasics-WPF\bin\AnyCPU\Debug\Microsoft.Kinect.dll
 C:\Users\Sawyer Hood\Desktop\BodyBasics-WPF\bin\AnyCPU\Debug\Microsoft.Kinect.xml
-C:\Users\Sawyer Hood\Desktop\BodyBasics-WPF\obj\Debug\BodyBasics-WPF.csprojResolveAssemblyReference.cache
 C:\Users\Sawyer Hood\Desktop\BodyBasics-WPF\obj\Debug\MainWindow.baml
 C:\Users\Sawyer Hood\Desktop\BodyBasics-WPF\obj\Debug\MainWindow.g.cs
 C:\Users\Sawyer Hood\Desktop\BodyBasics-WPF\obj\Debug\App.g.cs
