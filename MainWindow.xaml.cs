@@ -25,8 +25,13 @@ namespace Microsoft.Samples.Kinect.BodyBasics
     /// </summary>
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
-        public const string CLASSIFICATION = "1.0;";
+        public const string CLASSIFICATION = "0.0;";
         public const string OUT_FILE = @"C:\Users\Sawyer Hood\Desktop\out.csv";
+
+        public bool recording = false;
+        public string filename = "";
+        public string classification = "0.0";
+
         /// <summary>
         /// Radius of drawn hand circles
         /// </summary>
@@ -222,21 +227,7 @@ namespace Microsoft.Samples.Kinect.BodyBasics
             // initialize the components (controls) of the window
             this.InitializeComponent();
 
-            System.Threading.Timer timer = null;
-            ThreadStart ts = delegate ()
-            {
-                Dispatcher.BeginInvoke((Action)delegate ()
-                {
-                    Application.Current.Shutdown();
-                });
-            };
-            Thread t = new Thread(ts);
-            timer = new System.Threading.Timer((obj) =>
-            {
-                t.Start();
-                timer.Dispose();
-            },
-                        null, 12000, System.Threading.Timeout.Infinite);
+            
         }
 
         /// <summary>
@@ -315,16 +306,16 @@ namespace Microsoft.Samples.Kinect.BodyBasics
         }
 
         private void WriteJointOrientations(Body body) {
-            StringBuilder jointsString = new StringBuilder(CLASSIFICATION);
+            StringBuilder jointsString = new StringBuilder(classification + ",");
             var jointOrientations = body.JointOrientations;
             foreach (JointType joint in jointOrientations.Keys.OrderBy(s => s)) {
                 var orient = jointOrientations[joint].Orientation;
-                jointsString.AppendFormat("{0};{1};{2};{3};", orient.X, orient.Y, orient.Z, orient.W);
+                jointsString.AppendFormat("{0},{1},{2},{3},", orient.X, orient.Y, orient.Z, orient.W);
             }
             
             jointsString.Remove(jointsString.Length - 1, 1);
             using (System.IO.StreamWriter file =
-                                    new System.IO.StreamWriter(OUT_FILE, true))
+                                    new System.IO.StreamWriter(filename, true))
             {
                 file.WriteLine(jointsString.ToString());
             }
@@ -370,7 +361,10 @@ namespace Microsoft.Samples.Kinect.BodyBasics
 
                         if (body.IsTracked)
                         {
-                            WriteJointOrientations(body);
+                            if (recording)
+                            {
+                                WriteJointOrientations(body);
+                            }
                             this.DrawClippedEdges(body, dc);
 
                             IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
@@ -552,6 +546,31 @@ namespace Microsoft.Samples.Kinect.BodyBasics
             // on failure, set the status text
             this.StatusText = this.kinectSensor.IsAvailable ? Properties.Resources.RunningStatusText
                                                             : Properties.Resources.SensorNotAvailableStatusText;
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            recording = true;
+            filename = this.filenameBox.Text;
+            classification = "" + ((float)classCombo.SelectedIndex);
+            recLabel.Content = "Recording";
+
+            System.Threading.Timer timer = null;
+            ThreadStart ts = delegate ()
+            {
+                Dispatcher.BeginInvoke((Action)delegate ()
+                {
+                    recLabel.Content = "Recording Finished";
+                    recording = false;
+                });
+            };
+            Thread t = new Thread(ts);
+            timer = new System.Threading.Timer((obj) =>
+            {
+                t.Start();
+                timer.Dispose();
+            },
+            null, 12000, System.Threading.Timeout.Infinite);
         }
     }
 }
